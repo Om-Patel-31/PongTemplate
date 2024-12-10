@@ -13,9 +13,10 @@ namespace Pong
     public partial class Form1 : Form
     {
         //Global variables
-        Rectangle player1 = new Rectangle(10, 170, 10, 60);
-        Rectangle player2 = new Rectangle(580, 170, 10, 60);
+        Rectangle player1 = new Rectangle(100, 100, 10, 60);
+        Rectangle player2 = new Rectangle(100, 250, 10, 60);
         Rectangle ball = new Rectangle(295, 195, 10, 10);
+        Rectangle activePlayer = new Rectangle(100, 100, 10, 60);
 
         int player1Score = 0;
         int player2Score = 0;
@@ -26,11 +27,18 @@ namespace Pong
 
         bool wPressed = false;
         bool sPressed = false;
+        bool aPressed = false;
+        bool dPressed = false;
         bool upPressed = false;
         bool downPressed = false;
+        bool leftPressed = false;
+        bool rightPressed = false;
+
+        bool player1Active = true;
 
         SolidBrush blueBrush = new SolidBrush(Color.DodgerBlue);
         SolidBrush whiteBrush = new SolidBrush(Color.White);
+        Pen whitePen = new Pen(Color.White);
 
         public Form1()
         {
@@ -49,11 +57,23 @@ namespace Pong
                 case Keys.S:
                     sPressed = true;
                     break;
-                case Keys.Up: 
+                case Keys.A:
+                    aPressed = true;
+                    break;
+                case Keys.D:
+                    dPressed = true;
+                    break;
+                case Keys.Up:
                     upPressed = true;
                     break;
-                case Keys.Down: 
+                case Keys.Down:
                     downPressed = true;
+                    break;
+                case Keys.Left:
+                    leftPressed = true;
+                    break;
+                case Keys.Right:
+                    rightPressed = true;
                     break;
             }
         }
@@ -68,11 +88,23 @@ namespace Pong
                 case Keys.S:
                     sPressed = false;
                     break;
+                case Keys.A:
+                    aPressed = false;
+                    break;
+                case Keys.D:
+                    dPressed = false;
+                    break;
                 case Keys.Up:
                     upPressed = false;
                     break;
                 case Keys.Down:
                     downPressed = false;
+                    break;
+                case Keys.Left:
+                    leftPressed = false;
+                    break;
+                case Keys.Right:
+                    rightPressed = false;
                     break;
             }
         }
@@ -82,7 +114,6 @@ namespace Pong
             ball.X += ballXSpeed;
             ball.Y += ballYSpeed;
 
-
             if (wPressed == true && player1.Y > 0)
             {
                 player1.Y -= playerSpeed;
@@ -91,6 +122,16 @@ namespace Pong
             if (sPressed == true && player1.Y < this.Height - player1.Height)
             {
                 player1.Y += playerSpeed;
+            }
+
+            if (dPressed == true && player1.X > 0)
+            {
+                player1.X += playerSpeed;
+            }
+
+            if (aPressed == true && player1.X > 0)
+            {
+                player1.X -= playerSpeed;
             }
 
             if (upPressed == true && player2.Y > 0)
@@ -103,43 +144,46 @@ namespace Pong
                 player2.Y += playerSpeed;
             }
 
-            if (ball.Y < 0 || ball.Y > this.Height - ball.Height)
+            if (leftPressed == true && player2.X < this.Height - player2.Height)
             {
-                ballYSpeed *= -1;  
+                player2.X -= playerSpeed;
             }
 
-            if (player1.IntersectsWith(ball))
+            if (rightPressed == true && player2.X < this.Height - player2.Height)
             {
-                ballXSpeed *= -1;
-                ball.X = player1.X + ball.Width;
+                player2.X += playerSpeed;
             }
-            else if (player2.IntersectsWith(ball))
+
+            if (ball.Y < 0 || ball.Y > this.Height - ball.Height)
+            {
+                ballYSpeed *= -1;
+            }
+
+            if (ball.X > this.Width - ball.Width)
             {
                 ballXSpeed *= -1;
-                ball.X = player2.X - ball.Width;
             }
 
             if (ball.X < 0)
             {
-                player2Score++;
+                if (player1Active == true)
+                {
+                    player1Score++;
+                }
+                else if (player1Active == false)
+                {
+                    player2Score++;
+                }
+                p1ScoreLabel.Text = $"{player1Score}";
                 p2ScoreLabel.Text = $"{player2Score}";
 
                 ball.X = 295;
                 ball.Y = 195;
 
-                player1.Y = 170;
-                player2.Y = 170;
-            }
-            else if (ball.X > 600)
-            {
-                player1Score++;
-                p1ScoreLabel.Text = $"{player1Score}";
-
-                ball.X = 295;
-                ball.Y = 195;
-
-                player1.Y = 170;
-                player2.Y = 170;
+                player1.X = 100;
+                player1.Y = 100;
+                player2.X = 100;
+                player2.Y = 250;
             }
 
             if (player1Score == 3)
@@ -147,6 +191,11 @@ namespace Pong
                 gameTimer.Enabled = false;
                 winLabel.Visible = true;
                 winLabel.Text = "Player 1 Wins!!";
+
+                player1.X = 100;
+                player1.Y = 100;
+                player2.X = 100;
+                player2.Y = 250;
             }
             else if (player2Score == 3)
             {
@@ -155,14 +204,43 @@ namespace Pong
                 winLabel.Text = "Player 2 Wins!!";
             }
 
+            switch (player1Active)
+            {
+                case true:
+                    activePlayer.X = player2.X;
+                    activePlayer.Y = player2.Y;
+
+                    if (player2.IntersectsWith(ball) && ballXSpeed < 0)
+                    {
+                        ballXSpeed *= -1;
+                        ball.X = player2.X + ball.Width;
+                        player1Active = false;
+                    }
+                    break;
+                case false:
+                    activePlayer.X = player1.X;
+                    activePlayer.Y = player1.Y;
+
+                    if (player1.IntersectsWith(ball))
+                    {
+                        ballXSpeed *= -1;
+                        ball.X = player1.X + ball.Width;
+                        player1Active = true;
+                    }
+                    break;
+            }
+
             Refresh();
         }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
+
+
             e.Graphics.FillRectangle(blueBrush, player1);
             e.Graphics.FillRectangle(blueBrush, player2);
             e.Graphics.FillEllipse(whiteBrush, ball);
+            e.Graphics.DrawRectangle(whitePen, activePlayer);
         }
     }
 }
